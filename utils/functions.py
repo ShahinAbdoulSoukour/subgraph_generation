@@ -68,6 +68,14 @@ def get_subgraph(item: str, goal_name: str, model_sts, sparql, JSON, depth: int)
             # Add triple to data
             data.append({'TRIPLE_LABELIZED': triple_labelized, 'SUBJECT_ID': subject_id, 'PREDICATE_ID': predicate_id, 'OBJECT_ID': object_id, 'GOAL': goal_name})
 
+            # Add neighbors to the queue
+            if subject_id not in visited:
+                queue.append((subject_id, current_depth + 1))
+
+            if object_id not in visited:
+                queue.append((object_id, current_depth + 1))
+
+
         goal_triples_df = pd.DataFrame(data)
 
         print("\n")
@@ -103,24 +111,22 @@ def get_subgraph(item: str, goal_name: str, model_sts, sparql, JSON, depth: int)
         print(len(highest_score_triples.index))
 
         # Update the queue with the relevant nodes for next iteration
-        for idx, row in highest_score_triples.iterrows():
-            subj = row['SUBJECT_ID']
-            obj = row['OBJECT_ID']
+        #for idx, row in highest_score_triples.iterrows():
+        #    subj = row['SUBJECT_ID']
+        #    obj = row['OBJECT_ID']
 
             # Add neighbors to the queue
-            if subj not in visited:
-                queue.append((subj, current_depth + 1))
+        #    if subj not in visited:
+        #        queue.append((subj, current_depth + 1))
 
-            if obj not in visited:
-                queue.append((obj, current_depth + 1))
+        #    if obj not in visited:
+        #        queue.append((obj, current_depth + 1))
 
     # CSV files is generated to store the results
     highest_score_triples.to_csv("subgraph_with_depth_"+str(depth)+".csv", index=False) 
     
     return highest_score_triples
 
-
-import pandas as pd
 
 
 def traverse_graph(item, model_sts, sparql, JSON, depth, visited=None):
@@ -156,7 +162,7 @@ def traverse_graph(item, model_sts, sparql, JSON, depth, visited=None):
     return triples
 
 
-def get_subgraph(item: str, goal_name: str, model_sts, sparql, JSON, depth: int):
+def get_subgraph_v2(item: str, goal_name: str, model_sts, sparql, JSON, depth: int):
     visited = set()  # To keep track of visited nodes to avoid revisiting them
 
     # Traverse the graph from the input item
