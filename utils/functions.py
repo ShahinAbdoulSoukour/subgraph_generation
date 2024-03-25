@@ -30,6 +30,9 @@ def get_subgraph(item: str, goal_name: str, model_sts, sparql, JSON, depth: int)
     data = []
 
     while queue:
+
+        data.clear()
+
         print("queue: " + str(queue))
         current_item, current_depth = queue.pop(0)  # Dequeuing the node for exploration
 
@@ -38,7 +41,6 @@ def get_subgraph(item: str, goal_name: str, model_sts, sparql, JSON, depth: int)
 
         print("\n")
         print('current_depth: ' + str(current_depth))
-
 
         # The traversal stops when the specified depth limit is reached
         if current_depth > depth:
@@ -69,12 +71,11 @@ def get_subgraph(item: str, goal_name: str, model_sts, sparql, JSON, depth: int)
             data.append({'TRIPLE_LABELIZED': triple_labelized, 'SUBJECT_ID': subject_id, 'PREDICATE_ID': predicate_id, 'OBJECT_ID': object_id, 'GOAL': goal_name})
 
             # Add neighbors to the queue
-            if subject_id not in visited:
-                queue.append((subject_id, current_depth + 1))
+            #if subject_id not in visited:
+            #    queue.append((subject_id, current_depth + 1))
 
-            if object_id not in visited:
-                queue.append((object_id, current_depth + 1))
-
+            #if object_id not in visited:
+            #    queue.append((object_id, current_depth + 1))
 
         goal_triples_df = pd.DataFrame(data)
 
@@ -110,82 +111,20 @@ def get_subgraph(item: str, goal_name: str, model_sts, sparql, JSON, depth: int)
         print("\nLength highest scoring triples:")
         print(len(highest_score_triples.index))
 
+        print("\n")
+
         # Update the queue with the relevant nodes for next iteration
-        #for idx, row in highest_score_triples.iterrows():
-        #    subj = row['SUBJECT_ID']
-        #    obj = row['OBJECT_ID']
-
+        for idx, row in highest_score_triples.iterrows():
+            subj = row['SUBJECT_ID']
+            obj = row['OBJECT_ID']
             # Add neighbors to the queue
-        #    if subj not in visited:
-        #        queue.append((subj, current_depth + 1))
+            if subj not in visited:
+                queue.append((subj, current_depth + 1))
 
-        #    if obj not in visited:
-        #        queue.append((obj, current_depth + 1))
+            if obj not in visited:
+                queue.append((obj, current_depth + 1))
 
     # CSV files is generated to store the results
     highest_score_triples.to_csv("subgraph_with_depth_"+str(depth)+".csv", index=False) 
     
     return highest_score_triples
-
-
-
-def traverse_graph(item, model_sts, sparql, JSON, depth, visited=None):
-    if visited is None:
-        visited = set()
-
-    if depth == 0 or item in visited:
-        return []
-
-    visited.add(item)
-
-    # Query neighbors of the current item
-    sparql.setQuery(forward_backward.format(item))
-    sparql.setReturnFormat(JSON)
-    query_results = sparql.query().convert()
-
-    triples = []
-    for row in query_results["results"]["bindings"]:
-        subject_id = row['subject']['value']
-        predicate_id = row['predicate']['value']
-        object_id = row['object']['value']
-        triple_labelized = f"{row['subject_label']['value']} {row['predicate_label']['value']} {row['object_label']['value']}"
-
-        # Add triple to list
-        triples.append((triple_labelized, subject_id, predicate_id, object_id))
-
-        # Traverse neighbors recursively
-        if depth > 1:
-            for neighbor_id in [subject_id, object_id]:
-                if neighbor_id not in visited:
-                    triples += traverse_graph(neighbor_id, model_sts, sparql, JSON, depth - 1, visited)
-
-    return triples
-
-
-def get_subgraph_v2(item: str, goal_name: str, model_sts, sparql, JSON, depth: int):
-    visited = set()  # To keep track of visited nodes to avoid revisiting them
-
-    # Traverse the graph from the input item
-    triples = traverse_graph(item, model_sts, sparql, JSON, depth, visited)
-
-    # Create DataFrame from collected triples
-    data = [{'TRIPLE_LABELIZED': t[0], 'SUBJECT_ID': t[1], 'PREDICATE_ID': t[2], 'OBJECT_ID': t[3], 'GOAL': goal_name}
-            for t in triples]
-    goal_triples_df = pd.DataFrame(data)
-
-    # Calculate similarity scores
-    goal_triples_df['SIMILARITY_SCORE'] = goal_triples_df.apply(
-        lambda row: pd.Series(
-            cosine_similarity(
-                model_sts.encode(row['GOAL']).reshape(1, -1),  # goal embedding
-                model_sts.encode(row['TRIPLE_LABELIZED']).reshape(1, -1),  # simple triples embedding
-            ).flatten()
-        ),
-        axis=1
-    )
-    goal_triples_df.sort_values(by=['SIMILARITY_SCORE'], inplace=True, ascending=False)
-
-    # Save results to CSV
-    goal_triples_df.to_csv("subgraph_with_depth_" + str(depth) + ".csv", index=False)
-
-    return goal_triples_df
