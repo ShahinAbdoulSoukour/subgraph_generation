@@ -28,6 +28,7 @@ def get_subgraph(item: str, goal_name: str, model_sts, sparql, JSON, depth: int)
     visited = set()  # To keep track of visited nodes to avoid revisiting them
     queue = [(item, 1)]  # Using a queue for BFS traversal
     data = []
+    df = pd.DataFrame(columns = ["TRIPLE_LABELIZED", "SUBJECT_ID", "PREDICATE_ID", "OBJECT_ID", "GOAL", "SIMILARITY_SCORE"])
 
     while queue:
 
@@ -70,13 +71,6 @@ def get_subgraph(item: str, goal_name: str, model_sts, sparql, JSON, depth: int)
             # Add triple to data
             data.append({'TRIPLE_LABELIZED': triple_labelized, 'SUBJECT_ID': subject_id, 'PREDICATE_ID': predicate_id, 'OBJECT_ID': object_id, 'GOAL': goal_name})
 
-            # Add neighbors to the queue
-            #if subject_id not in visited:
-            #    queue.append((subject_id, current_depth + 1))
-
-            #if object_id not in visited:
-            #    queue.append((object_id, current_depth + 1))
-
         goal_triples_df = pd.DataFrame(data)
 
         print("\n")
@@ -103,7 +97,11 @@ def get_subgraph(item: str, goal_name: str, model_sts, sparql, JSON, depth: int)
         goal_triples_df.sort_values(by=['SIMILARITY_SCORE'], inplace=True, ascending=False)
 
         highest_score = goal_triples_df['SIMILARITY_SCORE'].max()
-        highest_score_triples = goal_triples_df[goal_triples_df['SIMILARITY_SCORE'] >= highest_score * 0.85]    
+        highest_score_triples = goal_triples_df[goal_triples_df['SIMILARITY_SCORE'] >= highest_score * 0.85]
+
+        #df_list.append(highest_score_triples)
+
+        df = df.append(highest_score_triples, ignore_index=True)
 
         print("\nHighest scoring triples:")
         print(highest_score_triples.to_string())
@@ -125,6 +123,6 @@ def get_subgraph(item: str, goal_name: str, model_sts, sparql, JSON, depth: int)
                 queue.append((obj, current_depth + 1))
 
     # CSV files is generated to store the results
-    highest_score_triples.to_csv("subgraph_with_depth_"+str(depth)+".csv", index=False) 
-    
-    return highest_score_triples
+    df.to_csv("subgraph_with_depth_"+str(depth)+".csv", index=False)
+
+    return df
