@@ -1,1 +1,1 @@
-# goal_relaxation
+## Subgraph extraction from Wikidata Knowledge Base
