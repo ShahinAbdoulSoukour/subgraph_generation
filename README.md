@@ -1,4 +1,5 @@
 ## Subgraph generation from Wikidata Knowledge Base
+The code can be run in a dedicated Jupyter Notebook:
 
 ## Installing the dependencies
 
