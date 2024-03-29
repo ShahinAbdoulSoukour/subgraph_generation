@@ -5,3 +5,4 @@ sentence-transformers~=2.2.2
 notebook~=7.0.8
 ipywidgets~=8.1.2
 scikit-learn~=1.4.0
+SPARQLWrapper==2.0.0
